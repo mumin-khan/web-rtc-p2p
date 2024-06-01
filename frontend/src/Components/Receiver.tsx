@@ -22,22 +22,25 @@ export const Receiver = () => {
             
         const video = document.createElement('video');
         document.body.appendChild(video);
-            console.log("popiu")
         const pc = new RTCPeerConnection();
         pc.ontrack = (event) => {
-            console.log("yut",event.track)
             video.srcObject = new MediaStream([event.track]);
             video.play();
         }
-       
+        pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                socket?.send(JSON.stringify({
+                    type: 'iceCandidate',
+                    candidate: event.candidate
+                }));
+            }
+        }
 
         socket.onmessage = (event) => {
             const message = JSON.parse(event.data);
-            console.log(message)
             if (message.type === 'createOffer') {
                 pc.setRemoteDescription(message.sdp).then(() => {
                     pc.createAnswer().then((answer) => {
-                        console.log("pop")
                         pc.setLocalDescription(answer);
                         socket.send(JSON.stringify({
                             type: 'createAnswer',
@@ -49,7 +52,26 @@ export const Receiver = () => {
                 pc.addIceCandidate(message.candidate);
             }
         }
+
+        getCameraStreamAndSend(pc);
     }
+
+    const getCameraStreamAndSend = (pc: RTCPeerConnection) => {
+        navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+            const text = document.createElement('p')
+            text.innerText = "my"
+            document.body.appendChild(text)
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            document.body.appendChild(video);
+            stream.getTracks().forEach((track) => {
+                pc?.addTrack(track);
+            });
+        });
+    }
+
+    
 
     return <div>
         <button onClick={()=>{startReceiving(socket)}}>Recieve</button>

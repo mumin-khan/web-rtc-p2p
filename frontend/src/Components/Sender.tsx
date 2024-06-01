@@ -42,7 +42,7 @@ export const Sender = () => {
                             }));
                         }
                     }
-            
+
                     pc.onnegotiationneeded = async () => {
                         const offer = await pc.createOffer();
                         await pc.setLocalDescription(offer);
@@ -52,6 +52,14 @@ export const Sender = () => {
                             id:message.id
                         }));
                     }
+
+        const videor = document.createElement('video');
+        document.body.appendChild(videor);
+        pc.ontrack = (event) => {
+            videor.srcObject = new MediaStream([event.track]);
+            videor.play();
+        }
+                    
                      
                    
                     getCameraStreamAndSend(pc);
@@ -68,10 +76,17 @@ export const Sender = () => {
 
     const getCameraStreamAndSend = (pc: RTCPeerConnection) => {
         navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+            if (!document.querySelector('#my'))
+            {
+                const text = document.createElement('p')
+            text.innerText = "my"
+            document.body.appendChild(text)
             const video = document.createElement('video');
+            video.setAttribute('id','my')
             video.srcObject = stream;
             video.play();
             document.body.appendChild(video);
+            }
             stream.getTracks().forEach((track) => {
                 pc?.addTrack(track);
             });
